@@ -18,4 +18,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
             ORDER BY c.name
             """)
     List<CategoryDto> findAllWithPublishedPostCount();
+
+    boolean existsByNameIgnoreCase(String name);
 }
