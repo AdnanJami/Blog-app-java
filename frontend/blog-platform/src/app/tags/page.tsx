@@ -1,6 +1,8 @@
 // src/app/tags/page.tsx
 import { getTags } from "@/lib/api";
+import Link from "next/link";
 import type { Tag } from "@/lib/api";
+
 export default async function TagsPage() {
   let tags: Tag[] = [];
   let error = false;
@@ -25,9 +27,10 @@ export default async function TagsPage() {
         ) : (
           <div className="flex flex-wrap gap-3">
             {tags.map((tag) => (
-              <div
+              <Link
                 key={tag.id}
-                className="group flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-gray-50 hover:border-accent hover:bg-blue-50 cursor-pointer transition-all"
+                href={`/?tagId=${tag.id}`}
+                className="group flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-gray-50 hover:border-accent hover:bg-blue-50 transition-all"
               >
                 <span className="font-mono text-sm text-gray-600 group-hover:text-accent transition-colors">
                   #{tag.name}
@@ -35,7 +38,7 @@ export default async function TagsPage() {
                 <span className="text-xs text-muted bg-white rounded-full px-2 py-0.5 border border-border">
                   {tag.postCount}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         )}

@@ -1,36 +1,10 @@
 // src/components/PostCard.tsx
 import Link from "next/link";
 import type { Post } from "@/lib/api";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  "Next.js":    "bg-blue-100 text-blue-700",
-  React:        "bg-cyan-100 text-cyan-700",
-  TypeScript:   "bg-indigo-100 text-indigo-700",
-  CSS:          "bg-pink-100 text-pink-700",
-  Backend:      "bg-emerald-100 text-emerald-700",
-  Database:     "bg-amber-100 text-amber-700",
-};
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { categoryColor, excerpt, formatDate, initials } from "@/lib/format";
 
 export default function PostCard({ post }: { post: Post }) {
-  const colorClass =
-    CATEGORY_COLORS[post.category] ?? "bg-gray-100 text-gray-700";
+  const colorClass = categoryColor(post.category.name);
 
   return (
     <Link
@@ -41,7 +15,7 @@ export default function PostCard({ post }: { post: Post }) {
       <span
         className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-3 ${colorClass}`}
       >
-        {post.category}
+        {post.category.name}
       </span>
 
       {/* Title */}
@@ -51,17 +25,17 @@ export default function PostCard({ post }: { post: Post }) {
 
       {/* Excerpt */}
       <p className="text-sm text-muted leading-relaxed line-clamp-3 mb-4">
-        {post.excerpt}
+        {excerpt(post.content)}
       </p>
 
       {/* Tags */}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {post.tags.slice(0, 3).map((tag) => (
           <span
-            key={tag}
+            key={tag.id}
             className="text-xs px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 font-mono"
           >
-            #{tag}
+            #{tag.name}
           </span>
         ))}
       </div>
@@ -77,7 +51,7 @@ export default function PostCard({ post }: { post: Post }) {
             {post.author.name}
           </p>
           <p className="text-xs text-muted">
-            {formatDate(post.publishedAt)} · {post.readTime} min read
+            {formatDate(post.createdAt)} · {post.readingTime} min read
           </p>
         </div>
       </div>

@@ -1,9 +1,10 @@
 // src/app/categories/page.tsx
 import { getCategories } from "@/lib/api";
 import Link from "next/link";
-import type { Tag } from "@/lib/api";
+import type { Category } from "@/lib/api";
+
 export default async function CategoriesPage() {
-  let categories: Tag[] = [];
+  let categories: Category[] = [];
   let error = false;
 
   try {
@@ -30,13 +31,13 @@ export default async function CategoriesPage() {
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/?category=${cat.slug}`}
+                href={`/?categoryId=${cat.id}`}
                 className="group p-5 rounded-xl border border-border hover:border-accent hover:shadow-card-hover transition-all"
               >
                 <h2 className="font-semibold text-ink group-hover:text-accent transition-colors mb-1">
                   {cat.name}
                 </h2>
-                <p className="text-sm text-muted">{cat.postCount} posts</p>
+                <p className="text-sm text-muted">{cat.postCount} {cat.postCount === 1 ? "post" : "posts"}</p>
               </Link>
             ))}
           </div>
