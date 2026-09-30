@@ -1,6 +1,6 @@
 package com.blog.blog.services.impl;
 
-import com.blog.blog.domain.entities.Category;
+import com.blog.blog.domain.dtos.CategoryDto;
 import com.blog.blog.repositories.CategoryRepository;
 import com.blog.blog.services.CategoryService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     @Override
-    public List<Category> listCategories() {
-        return categoryRepository.findAllWithPostCount();
+    public List<CategoryDto> listCategories() {
+        return categoryRepository.findAllWithPublishedPostCount();
     }
 }

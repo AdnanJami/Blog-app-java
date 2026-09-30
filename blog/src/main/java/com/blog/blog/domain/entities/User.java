@@ -34,6 +34,7 @@ public class User {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "author",cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Post> posts = new ArrayList<>();
 
     @Override
@@ -48,6 +49,7 @@ public class User {
         return Objects.hash(id, email, password, name, createdAt);
     }
 
+    @PrePersist
     protected void onCreate(){
         this.createdAt = LocalDateTime.now();
     }

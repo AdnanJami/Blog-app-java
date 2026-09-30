@@ -67,6 +67,14 @@ cd blog
 
 The API runs on [http://localhost:8081](http://localhost:8081). Tables are created automatically on startup.
 
+Database settings default to the Docker Compose database and can be overridden with environment variables:
+
+| Variable      | Default                                     |
+| ------------- | ------------------------------------------- |
+| `DB_URL`      | `jdbc:postgresql://127.0.0.1:5432/postgres` |
+| `DB_USERNAME` | `postgres`                                  |
+| `DB_PASSWORD` | `example`                                   |
+
 Interactive API docs are at [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html).
 
 ### 3. Run the frontend
@@ -79,17 +87,26 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Running tests
+
+```bash
+cd blog
+./mvnw test
+```
+
+Tests use an in-memory H2 database, so Docker doesn't need to be running.
+
 ## API
 
 | Method | Endpoint              | Description                         |
 | ------ | --------------------- | ----------------------------------- |
-| GET    | `/api/v1/catagories`  | List all categories with post counts |
+| GET    | `/api/v1/categories`  | List all categories with published post counts |
 
 More endpoints are on the roadmap below.
 
 ## Roadmap
 
-- [ ] **Fixes**: correct the categories endpoint path, fix entity builder defaults, efficient post-count queries, database credentials from environment variables, tests on H2
+- [x] **Fixes**: correct the categories endpoint path, fix entity builder defaults, efficient post-count queries, database credentials from environment variables, tests on H2
 - [ ] **Core API**: full CRUD for posts, categories and tags; filtering and pagination; validation and consistent error responses
 - [ ] **Frontend integration**: replace mock data with real API calls, CORS, post detail page
 - [ ] **Authentication**: JWT login and registration, author-only editing, private drafts, post editor
