@@ -2,7 +2,7 @@
 
 A full-stack blogging platform with a Spring Boot REST API and a Next.js frontend. Authors write posts, organize them into categories, label them with tags, and publish them when they're ready. Readers browse and filter posts by category or tag.
 
-> **Status:** in development. The REST API for posts, categories and tags is in place; the frontend still runs on mock data until it's connected to the API.
+> **Status:** in development. Readers can browse, filter and read posts end to end; writing posts from the UI arrives with authentication.
 
 ## Tech stack
 
@@ -29,9 +29,9 @@ A full-stack blogging platform with a Spring Boot REST API and a Next.js fronten
 │       └── services/         # Business logic
 ├── frontend/blog-platform/   # Next.js frontend
 │   └── src/
-│       ├── app/              # Pages: home, /categories, /tags
+│       ├── app/              # Pages: home, /posts/[id], /categories, /tags
 │       ├── components/       # Navbar, PostCard, PostsGrid, ...
-│       └── lib/api.ts        # API client
+│       └── lib/              # API client (api.ts) and formatting helpers
 └── docker-compose.yml        # PostgreSQL + Adminer
 ```
 
@@ -81,6 +81,7 @@ Database settings default to the Docker Compose database and can be overridden w
 | `DB_URL`      | `jdbc:postgresql://127.0.0.1:5432/postgres` |
 | `DB_USERNAME` | `postgres`                                  |
 | `DB_PASSWORD` | `example`                                   |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000`                |
 
 Interactive API docs are at [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html).
 
@@ -93,6 +94,17 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+The frontend calls the API at `http://localhost:8081/api/v1` by default. To point it elsewhere, copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_URL`. The backend only accepts browser requests from the origins in `CORS_ALLOWED_ORIGINS` (default `http://localhost:3000`, comma-separated).
+
+**Pages**
+
+| Route          | Description                                                                       |
+| -------------- | --------------------------------------------------------------------------------- |
+| `/`            | Published posts with category tabs and "Load more"; filter with `?categoryId=` and `?tagId=` |
+| `/posts/{id}`  | A single post                                                                     |
+| `/categories`  | All categories with post counts; each links to its filtered feed                  |
+| `/tags`        | All tags with post counts; each links to its filtered feed                        |
 
 ### Running tests
 
@@ -171,6 +183,6 @@ Errors use the standard [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807
 
 - [x] **Fixes**: correct the categories endpoint path, fix entity builder defaults, efficient post-count queries, database credentials from environment variables, tests on H2
 - [x] **Core API**: full CRUD for posts, categories and tags; filtering and pagination; validation and consistent error responses
-- [ ] **Frontend integration**: replace mock data with real API calls, CORS, post detail page
+- [x] **Frontend integration**: replace mock data with real API calls, CORS, post detail page
 - [ ] **Authentication**: JWT login and registration, author-only editing, private drafts, post editor
 - [ ] **Deployment**: Dockerized backend and frontend, CI with GitHub Actions, Flyway migrations
