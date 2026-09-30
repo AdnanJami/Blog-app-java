@@ -1,2 +1,5 @@
 .idea/
 *.iml
+
+# Local Docker Compose settings and secrets
+.env
