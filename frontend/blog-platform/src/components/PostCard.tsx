@@ -12,11 +12,16 @@ export default function PostCard({ post }: { post: Post }) {
       className="group block bg-white rounded-2xl p-6 shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-0.5 animate-fade-up"
     >
       {/* Category badge */}
-      <span
-        className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-3 ${colorClass}`}
-      >
-        {post.category.name}
-      </span>
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${colorClass}`}>
+          {post.category.name}
+        </span>
+        {post.status === "DRAFT" && (
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
+            Draft
+          </span>
+        )}
+      </div>
 
       {/* Title */}
       <h2 className="font-display font-semibold text-lg text-ink leading-snug mb-2 group-hover:text-accent transition-colors line-clamp-2">

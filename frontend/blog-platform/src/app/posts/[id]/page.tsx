@@ -6,13 +6,23 @@ import { ApiError, getPost } from "@/lib/api";
 import type { Post } from "@/lib/api";
 import { categoryColor, excerpt, formatDate, initials } from "@/lib/format";
 import ErrorBanner from "@/components/ErrorBanner";
+import DeletePostButton from "@/components/DeletePostButton";
+import { getCurrentUser } from "@/lib/auth";
+import { getToken } from "@/lib/session";
 
 type Props = { params: Promise<{ id: string }> };
 
-// Missing posts and malformed ids both come back as null; other failures throw
+// Missing posts and malformed ids both come back as null; other failures throw.
+// Sends the login token so authors can open their own drafts.
 async function loadPost(id: string): Promise<Post | null> {
   try {
-    return await getPost(id);
+    try {
+      return await getPost(id, await getToken());
+    } catch (err) {
+      // A stale or invalid token shouldn't hide public posts; retry anonymously
+      if (err instanceof ApiError && err.status === 401) return await getPost(id);
+      throw err;
+    }
   } catch (err) {
     if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
       return null;
@@ -52,21 +62,44 @@ export default async function PostPage({ params }: Props) {
     notFound();
   }
 
+  const user = await getCurrentUser();
+  const isAuthor = user?.id === post.author.id;
+
   const edited = post.updatedAt.slice(0, 16) !== post.createdAt.slice(0, 16);
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
-      <Link href="/" className="inline-block text-sm text-muted hover:text-ink mb-6">
-        ← All posts
-      </Link>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <Link href="/" className="text-sm text-muted hover:text-ink">
+          ← All posts
+        </Link>
+        {isAuthor && (
+          <div className="flex items-center gap-1">
+            <Link
+              href={`/posts/${post.id}/edit`}
+              className="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:text-ink hover:bg-gray-100 transition-colors"
+            >
+              Edit
+            </Link>
+            <DeletePostButton postId={post.id} />
+          </div>
+        )}
+      </div>
 
       <article className="bg-white rounded-2xl shadow-card p-8 md:p-10 animate-fade-up">
-        <Link
-          href={`/?categoryId=${post.category.id}`}
-          className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-4 hover:opacity-80 ${categoryColor(post.category.name)}`}
-        >
-          {post.category.name}
-        </Link>
+        <div className="flex items-center gap-2 mb-4">
+          <Link
+            href={`/?categoryId=${post.category.id}`}
+            className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full hover:opacity-80 ${categoryColor(post.category.name)}`}
+          >
+            {post.category.name}
+          </Link>
+          {post.status === "DRAFT" && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
+              Draft · only visible to you
+            </span>
+          )}
+        </div>
 
         <h1 className="font-display font-bold text-3xl text-ink leading-tight mb-6">
           {post.title}

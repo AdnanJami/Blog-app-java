@@ -1,12 +1,15 @@
 // src/app/categories/page.tsx
 import { getCategories } from "@/lib/api";
 import Link from "next/link";
+import AddCategoryForm from "@/components/AddCategoryForm";
+import { getCurrentUser } from "@/lib/auth";
 import type { Category } from "@/lib/api";
 
 export default async function CategoriesPage() {
   let categories: Category[] = [];
   let error = false;
 
+  const user = await getCurrentUser();
   try {
     categories = await getCategories();
   } catch {
@@ -19,6 +22,8 @@ export default async function CategoriesPage() {
         <h1 className="font-display font-bold text-2xl text-ink mb-8">
           Categories
         </h1>
+
+        {user && <AddCategoryForm />}
 
         {error ? (
           <div className="rounded-2xl border border-error-border bg-error-bg px-6 py-4">

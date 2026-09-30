@@ -2,6 +2,8 @@
 // src/components/Navbar.tsx
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/actions/auth";
+import type { User } from "@/lib/api";
 
 const NAV_LINKS = [
   { href: "/",           label: "Home"       },
@@ -9,12 +11,13 @@ const NAV_LINKS = [
   { href: "/tags",       label: "Tags"       },
 ];
 
-export default function Navbar() {
+export default function Navbar({ user }: { user: User | null }) {
   const pathname = usePathname();
+  const links = user ? [...NAV_LINKS, { href: "/drafts", label: "Drafts" }] : NAV_LINKS;
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link
           href="/"
@@ -25,7 +28,7 @@ export default function Navbar() {
 
         {/* Nav links */}
         <nav className="flex items-center gap-1">
-          {NAV_LINKS.map(({ href, label }) => {
+          {links.map(({ href, label }) => {
             const active =
               href === "/"
                 ? pathname === "/"
@@ -46,13 +49,34 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Log In */}
-        <Link
-          href="/login"
-          className="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-medium text-ink transition-colors"
-        >
-          Log In
-        </Link>
+        {user ? (
+          <div className="flex items-center gap-3">
+            <Link
+              href="/posts/new"
+              className="px-4 py-2 rounded-xl bg-accent hover:bg-blue-700 text-sm font-medium text-white transition-colors"
+            >
+              Write
+            </Link>
+            <span className="hidden md:inline text-sm text-muted truncate max-w-[10rem]" title={user.email}>
+              {user.name}
+            </span>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-medium text-ink transition-colors"
+              >
+                Log out
+              </button>
+            </form>
+          </div>
+        ) : (
+          <Link
+            href={`/login${pathname !== "/" && pathname !== "/login" && pathname !== "/register" ? `?next=${encodeURIComponent(pathname)}` : ""}`}
+            className="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-medium text-ink transition-colors"
+          >
+            Log In
+          </Link>
+        )}
       </div>
     </header>
   );

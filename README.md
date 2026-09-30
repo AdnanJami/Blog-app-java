@@ -2,7 +2,7 @@
 
 A full-stack blogging platform with a Spring Boot REST API and a Next.js frontend. Authors write posts, organize them into categories, label them with tags, and publish them when they're ready. Readers browse and filter posts by category or tag.
 
-> **Status:** in development. Readers can browse, filter and read posts end to end; writing posts from the UI arrives with authentication.
+> **Status:** in development. Readers can browse, filter and read posts; registered authors can write, edit, publish and delete their own posts.
 
 ## Tech stack
 
@@ -82,6 +82,8 @@ Database settings default to the Docker Compose database and can be overridden w
 | `DB_USERNAME` | `postgres`                                  |
 | `DB_PASSWORD` | `example`                                   |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000`                |
+| `JWT_SECRET`  | a development-only value; **set your own (32+ characters) outside local development** |
+| `JWT_EXPIRATION` | `PT24H` (how long a login lasts)         |
 
 Interactive API docs are at [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html).
 
@@ -105,6 +107,12 @@ The frontend calls the API at `http://localhost:8081/api/v1` by default. To poin
 | `/posts/{id}`  | A single post                                                                     |
 | `/categories`  | All categories with post counts; each links to its filtered feed                  |
 | `/tags`        | All tags with post counts; each links to its filtered feed                        |
+| `/login`, `/register` | Log in or create an account                                                |
+| `/posts/new`   | Write a post (save as draft or publish)                                           |
+| `/posts/{id}/edit` | Edit your own post                                                            |
+| `/drafts`      | Your unpublished drafts                                                           |
+
+Logging in stores the API token in an httpOnly cookie, so browser scripts can't read it; the Next.js server attaches it to API calls.
 
 ### Running tests
 
@@ -117,7 +125,17 @@ Tests use an in-memory H2 database, so Docker doesn't need to be running.
 
 ## API
 
-All endpoints are under `/api/v1`. Until authentication is added, every post is written by a default author that is created on startup.
+All endpoints are under `/api/v1`. Reading is public; everything that changes data needs a token from `/auth/register` or `/auth/login`, sent as `Authorization: Bearer <token>`.
+
+### Auth
+
+| Method | Endpoint         | Description                                                                 |
+| ------ | ---------------- | --------------------------------------------------------------------------- |
+| POST   | `/auth/register` | `{"name", "email", "password"}` (password 8–72 characters) → `{token, expiresAt, user}` |
+| POST   | `/auth/login`    | `{"email", "password"}` → `{token, expiresAt, user}`                        |
+| GET    | `/auth/me`       | The logged-in user (token required)                                         |
+
+Only a post's author can update or delete it. Drafts are visible only to their author; for anyone else they return 404.
 
 ### Categories
 
@@ -142,7 +160,7 @@ Tag names are stored trimmed and lower-case.
 | Method | Endpoint        | Description                                                               |
 | ------ | --------------- | ------------------------------------------------------------------------- |
 | GET    | `/posts`        | Published posts, newest first. Query params: `categoryId`, `tagId`, `page` (default 0), `size` (default 10, max 100) |
-| GET    | `/posts/drafts` | The current author's drafts                                               |
+| GET    | `/posts/drafts` | Your drafts (token required)                                              |
 | GET    | `/posts/{id}`   | A single post (drafts only for their author)                              |
 | POST   | `/posts`        | Create a post                                                             |
 | PUT    | `/posts/{id}`   | Update a post                                                             |
@@ -176,6 +194,8 @@ Errors use the standard [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807
 | Status | When                                                          |
 | ------ | ------------------------------------------------------------- |
 | 400    | Invalid body, malformed JSON, or bad query/path parameter     |
+| 401    | Missing, invalid or expired token; wrong email or password    |
+| 403    | Changing someone else's post                                  |
 | 404    | The post, category or tag doesn't exist                       |
 | 409    | Duplicate category, or deleting a category/tag that's in use  |
 
@@ -184,5 +204,5 @@ Errors use the standard [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807
 - [x] **Fixes**: correct the categories endpoint path, fix entity builder defaults, efficient post-count queries, database credentials from environment variables, tests on H2
 - [x] **Core API**: full CRUD for posts, categories and tags; filtering and pagination; validation and consistent error responses
 - [x] **Frontend integration**: replace mock data with real API calls, CORS, post detail page
-- [ ] **Authentication**: JWT login and registration, author-only editing, private drafts, post editor
+- [x] **Authentication**: JWT login and registration, author-only editing, private drafts, post editor
 - [ ] **Deployment**: Dockerized backend and frontend, CI with GitHub Actions, Flyway migrations
