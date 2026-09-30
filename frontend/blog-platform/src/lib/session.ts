@@ -13,7 +13,8 @@ export async function getToken(): Promise<string | undefined> {
 export async function setSession(token: string, expiresAt: string) {
   (await cookies()).set(TOKEN_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // HTTPS-only in production; set COOKIE_SECURE=false to serve a production build over plain HTTP
+    secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === "true" : process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     // Expire together with the token so a stale token is never sent
