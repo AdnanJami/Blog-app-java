@@ -7,6 +7,7 @@ import com.blog.blog.domain.entities.Category;
 import com.blog.blog.domain.entities.Post;
 import com.blog.blog.domain.entities.Tag;
 import com.blog.blog.domain.entities.User;
+import com.blog.blog.exceptions.ForbiddenException;
 import com.blog.blog.exceptions.ResourceNotFoundException;
 import com.blog.blog.mappers.PostMapper;
 import com.blog.blog.repositories.CategoryRepository;
@@ -73,9 +74,9 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public PostDto getPost(UUID id) {
         Post post = findPost(id);
-        // Drafts are only visible to their author
+        // Drafts are only visible to their author; everyone else gets a 404 as if it didn't exist
         if (post.getStatus() == PostStatus.DRAFT
-                && !post.getAuthor().getId().equals(userService.getCurrentUser().getId())) {
+                && userService.findCurrentUser().map(user -> !isAuthor(post, user)).orElse(true)) {
             throw notFound(id);
         }
         return postMapper.toDto(post);
@@ -94,6 +95,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public PostDto updatePost(UUID id, PostRequest request) {
         Post post = findPost(id);
+        requireAuthor(post);
         applyRequest(post, request);
         // Flush so @PreUpdate refreshes updatedAt before the response is built
         return postMapper.toDto(postRepository.saveAndFlush(post));
@@ -102,7 +104,9 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void deletePost(UUID id) {
-        postRepository.delete(findPost(id));
+        Post post = findPost(id);
+        requireAuthor(post);
+        postRepository.delete(post);
     }
 
     private void applyRequest(Post post, PostRequest request) {
@@ -112,6 +116,17 @@ public class PostServiceImpl implements PostService {
         post.setReadingTime(calculateReadingTime(request.getContent()));
         post.setCategory(findCategory(request.getCategoryId()));
         post.setTags(findTags(request.getTagIds()));
+    }
+
+    private void requireAuthor(Post post) {
+        User currentUser = userService.getCurrentUser();
+        if (!isAuthor(post, currentUser)) {
+            throw new ForbiddenException("Only the author can change this post");
+        }
+    }
+
+    private static boolean isAuthor(Post post, User user) {
+        return post.getAuthor().getId().equals(user.getId());
     }
 
     private Post findPost(UUID id) {
