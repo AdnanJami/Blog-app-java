@@ -1,9 +1,15 @@
 package com.blog.blog.services;
 
-import com.blog.blog.domain.entities.Category;
+import com.blog.blog.domain.dtos.CategoryDto;
+import com.blog.blog.domain.dtos.CreateCategoryRequest;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface CategoryService {
-    List<Category> listCategories();
+    List<CategoryDto> listCategories();
+
+    CategoryDto createCategory(CreateCategoryRequest request);
+
+    void deleteCategory(UUID id);
 }

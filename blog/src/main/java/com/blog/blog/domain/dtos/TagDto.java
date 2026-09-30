@@ -13,10 +13,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CategoryDto {
+public class TagDto {
 
     private UUID id;
     private String name;
-    // Only populated by the category listing; omitted when nested inside a post
+    // Only populated by the tag listing; omitted when nested inside a post
     private Long postCount;
 }
