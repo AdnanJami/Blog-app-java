@@ -10,29 +10,35 @@ A full-stack blogging platform with a Spring Boot REST API and a Next.js fronten
 | -------- | ------------------------------------------------------------------------------ |
 | Backend  | Java 21, Spring Boot 3.5, Spring Data JPA, Bean Validation, Lombok, MapStruct |
 | API docs | springdoc OpenAPI (Swagger UI)                                                 |
-| Database | PostgreSQL (H2 available for tests)                                            |
+| Security | Spring Security, JWT (OAuth2 resource server), BCrypt                          |
+| Database | PostgreSQL 18, Flyway migrations (H2 for tests)                                |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4                               |
-| Tooling  | Maven, npm, Docker Compose                                                     |
+| Tooling  | Maven, npm, Docker / Docker Compose, GitHub Actions                            |
 
 ## Project structure
 
 ```
 .
-├── blog/                     # Spring Boot backend
-│   └── src/main/java/com/blog/blog/
-│       ├── controllers/      # REST controllers
-│       ├── domain/
-│       │   ├── entities/     # JPA entities: Post, Category, Tag, User
-│       │   └── dtos/         # Request/response objects
-│       ├── mappers/          # MapStruct entity <-> DTO mappers
-│       ├── repositories/     # Spring Data repositories
-│       └── services/         # Business logic
-├── frontend/blog-platform/   # Next.js frontend
+├── .github/workflows/ci.yml  # CI: backend tests, frontend lint/build, Docker image builds
+├── blog/                     # Spring Boot backend (+ Dockerfile)
+│   └── src/main/
+│       ├── java/com/blog/blog/
+│       │   ├── config/       # Security (JWT), CORS
+│       │   ├── controllers/  # REST controllers
+│       │   ├── domain/
+│       │   │   ├── entities/ # JPA entities: Post, Category, Tag, User
+│       │   │   └── dtos/     # Request/response objects
+│       │   ├── exceptions/   # Error types and the problem-detail handler
+│       │   ├── mappers/      # MapStruct entity <-> DTO mappers
+│       │   ├── repositories/ # Spring Data repositories
+│       │   └── services/     # Business logic
+│       └── resources/db/migration/  # Flyway SQL migrations
+├── frontend/blog-platform/   # Next.js frontend (+ Dockerfile)
 │   └── src/
-│       ├── app/              # Pages: home, /posts/[id], /categories, /tags
-│       ├── components/       # Navbar, PostCard, PostsGrid, ...
-│       └── lib/              # API client (api.ts) and formatting helpers
-└── docker-compose.yml        # PostgreSQL + Adminer
+│       ├── app/              # Pages and Server Actions (app/actions)
+│       ├── components/       # Navbar, PostCard, PostsGrid, PostEditor, ...
+│       └── lib/              # API client, session cookie, auth and formatting helpers
+└── docker-compose.yml        # PostgreSQL + Adminer; backend + frontend with --profile app
 ```
 
 ## Domain model
@@ -44,13 +50,35 @@ A full-stack blogging platform with a Spring Boot REST API and a Next.js fronten
 
 ## Getting started
 
-### Prerequisites
+### Quick start: everything in Docker
+
+Only Docker is needed:
+
+```bash
+docker compose --profile app up -d --build
+```
+
+This builds and starts the whole stack:
+
+| Service  | URL                                                    |
+| -------- | ------------------------------------------------------ |
+| Frontend | [http://localhost:3000](http://localhost:3000)         |
+| API      | [http://localhost:8081/api/v1](http://localhost:8081/api/v1) ([Swagger UI](http://localhost:8081/swagger-ui.html)) |
+| Adminer  | [http://localhost:8888](http://localhost:8888) (server `db`, user `postgres`, password `example`) |
+
+Stop it with `docker compose --profile app down`. Database data is kept in the `db-data` volume; add `-v` to delete it too.
+
+For anything beyond local use, set `JWT_SECRET` (and `DB_PASSWORD`) in your environment or a `.env` file next to `docker-compose.yml`. `PUBLIC_API_URL` sets where the browser reaches the API (default `http://localhost:8081/api/v1`).
+
+### Local development
+
+#### Prerequisites
 
 - Java 21
-- Node.js 20+
-- Docker
+- Node.js 20.9+
+- Docker (for the database)
 
-### 1. Start the database
+#### 1. Start the database
 
 ```bash
 docker compose up -d
@@ -65,14 +93,14 @@ This starts PostgreSQL on `localhost:5432` and Adminer (a web database UI) on [h
 > DB_URL=jdbc:postgresql://127.0.0.1:5433/postgres ./mvnw spring-boot:run
 > ```
 
-### 2. Run the backend
+#### 2. Run the backend
 
 ```bash
 cd blog
 ./mvnw spring-boot:run
 ```
 
-The API runs on [http://localhost:8081](http://localhost:8081). Tables are created automatically on startup.
+The API runs on [http://localhost:8081](http://localhost:8081). On startup, [Flyway](https://documentation.red-gate.com/flyway) applies any pending migrations from `src/main/resources/db/migration`; Hibernate only validates that the schema matches the entities. To change the schema, add a new file such as `V3__add_post_slug.sql` — never edit a migration that has already been applied. Databases created before migrations were introduced are detected and marked as being at version 1 automatically.
 
 Database settings default to the Docker Compose database and can be overridden with environment variables:
 
@@ -87,7 +115,7 @@ Database settings default to the Docker Compose database and can be overridden w
 
 Interactive API docs are at [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html).
 
-### 3. Run the frontend
+#### 3. Run the frontend
 
 ```bash
 cd frontend/blog-platform
@@ -121,7 +149,11 @@ cd blog
 ./mvnw test
 ```
 
-Tests use an in-memory H2 database, so Docker doesn't need to be running.
+Tests use an in-memory H2 database (with the same Flyway migrations), so Docker doesn't need to be running.
+
+### Continuous integration
+
+[GitHub Actions](.github/workflows/ci.yml) runs on every push to `main` and `dev` and on pull requests: backend tests, frontend lint + type check + production build, and a build of both Docker images.
 
 ## API
 
@@ -205,4 +237,4 @@ Errors use the standard [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807
 - [x] **Core API**: full CRUD for posts, categories and tags; filtering and pagination; validation and consistent error responses
 - [x] **Frontend integration**: replace mock data with real API calls, CORS, post detail page
 - [x] **Authentication**: JWT login and registration, author-only editing, private drafts, post editor
-- [ ] **Deployment**: Dockerized backend and frontend, CI with GitHub Actions, Flyway migrations
+- [x] **Deployment**: Dockerized backend and frontend, CI with GitHub Actions, Flyway migrations

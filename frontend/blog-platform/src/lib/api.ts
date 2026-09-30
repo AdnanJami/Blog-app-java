@@ -2,8 +2,12 @@
 // Typed client for the Spring Boot API. Types mirror the backend DTOs.
 // Calls that need a login take the JWT as `token`; only server code has it (see lib/session.ts).
 
+// The browser uses NEXT_PUBLIC_API_URL (fixed at build time). Server code can use API_URL instead,
+// read at runtime, for when the API has a different address from inside the server (e.g. in Docker).
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081/api/v1";
+  (typeof window === "undefined" ? process.env.API_URL : undefined) ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:8081/api/v1";
 
 export interface Author {
   id: string;
